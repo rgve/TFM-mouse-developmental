@@ -1,0 +1,86 @@
+#+++++
+#1. Activate conda environment
+conda activate /users/rg/bborsari/.conda/envs/ERC_human/ &&
+#+++++
+
+#+++++
+# 2. define bedfile and mark
+myBed='bed.files/gencode.vM4.protein.coding.non.redundant.TSS.2Kb.up.down.mito.mbrain.bed' &&
+myMark='H3K9ac'&&
+myTissue='midbrain' #(midbrain/heart) &&
+#+++++
+
+#+++++
+# 3. list pileup bw files
+grep $myMark /no_backup_isis/rg/projects/ERC/mouse/chipseq/chipseq-pipeline.db | grep pileup | grep $myTissue | sort -k1,1 | grep X1 | cut -f2 > $myMark/$myMark.R1.pileup.bw.txt &&
+grep $myMark /no_backup_isis/rg/projects/ERC/mouse/chipseq/chipseq-pipeline.db | grep pileup | grep $myTissue | sort -k1,1 | grep X2 | cut -f2 > $myMark/$myMark.R2.pileup.bw.txt &&
+#+++++
+
+#+++++
+# 4. Move first row (PN) to the end
+awk 'NR==1{store=$0;next}1;END{print store}' $myMark/$myMark.R1.pileup.bw.txt > $myMark/$myMark.R1.pileup.bw.txt.tmp &&
+rm $myMark/$myMark.R1.pileup.bw.txt &&
+mv $myMark/$myMark.R1.pileup.bw.txt.tmp $myMark/$myMark.R1.pileup.bw.txt &&
+#
+awk 'NR==1{store=$0;next}1;END{print store}' $myMark/$myMark.R2.pileup.bw.txt > $myMark/$myMark.R2.pileup.bw.txt.tmp &&
+rm $myMark/$myMark.R2.pileup.bw.txt &&
+mv $myMark/$myMark.R2.pileup.bw.txt.tmp $myMark/$myMark.R2.pileup.bw.txt &&
+#+++++
+
+#+++++
+# 5. list Zerone peak calling files and move first row (PN) to the end
+grep $myMark /no_backup_isis/rg/projects/ERC/mouse/chipseq/chipseq-pipeline.db | grep erone_merged | sort -k1 | grep $myTissue |  cut -f2 > $myMark/$myMark.Zerone.peaks.txt &&
+#+++++
+
+#+++++
+# 6. Move first row (PN) to the end
+awk 'NR==1{store=$0;next}1;END{print store}' $myMark/$myMark.Zerone.peaks.txt > $myMark/$myMark.Zerone.peaks.txt.tmp &&
+rm $myMark/$myMark.Zerone.peaks.txt &&
+mv $myMark/$myMark.Zerone.peaks.txt.tmp $myMark/$myMark.Zerone.peaks.txt &&
+#+++++
+
+#+++++
+# 7. get mark matrix
+# rep. 1
+../bin/get.matrix.chipseq.sh --bedfile $myBed --bw $myMark/$myMark.R1.pileup.bw.txt --target $myMark --outFolder bwtool --signal mean --peaks $myMark/$myMark.Zerone.peaks.txt --keep yes --outFile $myMark/$myMark.R1.matrix.tsv &&
+#clean-up
+mkdir $myMark/coordinates.bed &&
+mv *.intersection.bed $myMark/coordinates.bed/ &&
+rm $myMark.path.*  &&
+# rep. 2
+../bin/get.matrix.chipseq.sh --bedfile $myBed --bw $myMark/$myMark.R2.pileup.bw.txt --target $myMark --outFolder bwtool --signal mean --peaks $myMark/$myMark.Zerone.peaks.txt --keep yes --outFile $myMark/$myMark.R2.matrix.tsv &&
+# clean-up
+rm *.intersection.bed &&
+rm $myMark.path.*  &&
+#+++++
+
+#+++++
+# 8. Merge rep.1 and rep.2
+paste <(tail -n+2 $myMark/$myMark.R1.matrix.tsv) <(tail -n+2 $myMark/$myMark.R2.matrix.tsv | cut -f2-) | sed '1igene_id\tC11.1\tC12.1\tC13.1\tC14.1\tC15.1\tC16.1\tcPN.1\tC11.2\tC12.2\tC13.2\tC14.2\tC15.2\tC16.2\tcPN.2' > $myMark/$myMark.R1.R2.matrix.tsv &&
+#+++++
+
+#+++++
+# 9. run QN on merged matrix
+Rscript /no_backup/rg/bborsari/projects/ERC/human/2018-01-19.chip-nf/Borsari_et_al/bin/quantile.normalization.R $myMark/$myMark.R1.R2.matrix.tsv > $myMark/$myMark.R1.R2.matrix.after.QN.merged.tsv &&
+#+++++
+
+#+++++
+# 10. split joint matrix into rep. 1 and rep. 2 matrices
+awk 'BEGIN{FS=OFS="\t"}{if (NR==1){print "gene_id", $0} else {print $0}}' $myMark/$myMark.R1.R2.matrix.after.QN.merged.tsv | cut -f-8 | sed '1s/gene_id\t//' > $myMark/$myMark.R1.matrix.after.QN.merged.tsv &&
+awk 'BEGIN{FS=OFS="\t"}{if (NR==1){print "gene_id", $0} else {print $0}}' $myMark/$myMark.R1.R2.matrix.after.QN.merged.tsv | cut -f1,9-15 | sed '1s/gene_id\t//' > $myMark/$myMark.R2.matrix.after.QN.merged.tsv &&
+#+++++
+
+#+++++
+# 11. take the average of replicate 1 and 2
+Rscript /no_backup/rg/bborsari/projects/ERC/human/2018-01-19.chip-nf/Borsari_et_al/bin/matrix_matrix_mean.R -a $myMark/$myMark.R1.matrix.after.QN.merged.tsv -b $myMark/$myMark.R2.matrix.after.QN.merged.tsv -o $myMark/$myMark.matrix.after.QN.merged.tsv -r 2  &&
+#+++++
+
+#+++++
+# 12. Make DEG subsets
+grep -Ff expression/MBrain/genes.DEG.dot.txt $myMark/$myMark.matrix.after.QN.merged.tsv > $myMark/$myMark.matrix.after.QN.merged.deg.tsv &&
+grep -Ff expression/MBrain/metadata.upreg.cut.tsv $myMark/$myMark.matrix.after.QN.merged.tsv > $myMark/$myMark.matrix.after.QN.merged.upreg.tsv &&
+grep -Ff expression/MBrain/metadata.downreg.cut.tsv $myMark/$myMark.matrix.after.QN.merged.tsv > $myMark/$myMark.matrix.after.QN.merged.downreg.tsv &&
+grep -Ff expression/MBrain/selected.genes.expr.0.upreg.dot.tsv $myMark/$myMark.matrix.after.QN.merged.tsv > $myMark/$myMark.matrix.after.QN.merged.upreg0.tsv &&
+grep -Ff expression/MBrain/selected.genes.expr.1.upreg.dot.tsv $myMark/$myMark.matrix.after.QN.merged.tsv > $myMark/$myMark.matrix.after.QN.merged.upreg1.tsv &&
+grep -Ff expression/MBrain/selected.genes.expr.25.upreg.dot.tsv $myMark/$myMark.matrix.after.QN.merged.tsv > $myMark/$myMark.matrix.after.QN.merged.upreg25.tsv
+#+++++
