@@ -1,0 +1,259 @@
+
+#+++++
+#1. Working directory
+cd /Users/raul/Library/Mobile Documents/com~apple~CloudDocs/Master/TFM/w1
+#+++++
+
+#+++++
+#2. Subset Hrt & MBrain tissue expression
+cut -d$'\t' -f 1,2,17-32 Encode_mm_Embryo.tsv > subsetMBrain.EncodeEmbryo.tsv
+cut -d$'\t' -f 1,2,57-72 Encode_mm_Embryo.tsv > subsetHrt.EncodeEmbryo.tsv
+#+++++
+
+#+++++
+#3. Separating replicates for every tissue
+cut -f2,3,5,7,9,11,13,15,17 subsetHrt.EncodeEmbryo.tsv | grep ENS > subs_Hrt1.tsv
+cut -f2,4,6,8,10,12,14,16,18 subsetHrt.EncodeEmbryo.tsv | grep ENS > subs_Hrt2.tsv
+cut -f2,3,5,7,9,11,13,15,17 subsetMBrain.EncodeEmbryo.tsv | grep ENS > MBrain/subs_MBrain1.tsv
+cut -f2,4,6,8,10,12,14,16,18 subsetMBrain.EncodeEmbryo.tsv | grep ENS > MBrain/subs_Mbrain2.tsv
+#+++++
+
+#+++++
+#4. retrieve genes with min. expression of 5 TPM (log2(TPM+1) >= 2.584963)
+python2 ./join.py -b <(tail -n+2 Hrt/subs_Hrt1.tsv | awk 'BEGIN{FS=OFS="\t"}{for (i=2;i<=NF;i++){print $1"_"(i-1), $i}}') -a <(tail -n+2 Hrt/subs_Hrt2.tsv | awk 'BEGIN{FS=OFS="\t"}{for (i=2;i<=NF;i++){print $1"_"(i-1), $i}}') | awk '$2>=5 && $3>=5{split($1, a, "_"); print a[1]}' | sort -u > Hrt/genes.with.min.5.TPM.txt
+python2 ./join.py -b <(tail -n+2 MBrain/subs_MBrain1.tsv | awk 'BEGIN{FS=OFS="\t"}{for (i=2;i<=NF;i++){print $1"_"(i-1), $i}}') -a <(tail -n+2 MBrain/subs_MBrain2.tsv | awk 'BEGIN{FS=OFS="\t"}{for (i=2;i<=NF;i++){print $1"_"(i-1), $i}}') | awk '$2>=5 && $3>=5{split($1, a, "_"); print a[1]}' | sort -u > MBrain/genes.with.min.5.TPM.txt
+#+++++
+
+#+++++
+#5. retrieve silent genes (O TPM in all tp and replicates)
+python2 ./join.py -b <(cat MBrain/subs_MBrain1.tsv | awk 'BEGIN{FS=OFS="\t"}{for (i=2;i<=NF;i++){print $1"_"(i-1), $i}}') -a <(cat MBrain/subs_MBrain2.tsv | awk 'BEGIN{FS=OFS="\t"}{for (i=2;i<=NF;i++){print $1"_"(i-1), $i}}') | awk '$2==0 && $3==0{split($1, a, "_"); print a[1]}' | sort | uniq -c | awk '$1==8{print $2}' > MBrain/silent.genes.txt
+python2 ./join.py -b <(cat Hrt/subs_Hrt1.tsv | awk 'BEGIN{FS=OFS="\t"}{for (i=2;i<=NF;i++){print $1"_"(i-1), $i}}') -a <(cat Hrt/subs_Hrt2.tsv | awk 'BEGIN{FS=OFS="\t"}{for (i=2;i<=NF;i++){print $1"_"(i-1), $i}}') | awk '$2==0 && $3==0{split($1, a, "_"); print a[1]}' | sort | uniq -c | awk '$1==8{print $2}' > Hrt/silent.genes.txt
+#+++++
+
+#+++++
+#6. Retrieve expression, matrices for the selected genes (silent & expressed >= 5 TPMs)
+bash ./selectMatrixRows.sh <(cat MBrain/genes.with.min.5.TPM.txt MBrain/silent.genes.txt) MBrain/subs_MBrain2.tsv > MBrain/selected.genes.rep.2.tsv
+bash ./selectMatrixRows.sh <(cat MBrain/genes.with.min.5.TPM.txt MBrain/silent.genes.txt) MBrain/subs_MBrain1.tsv > MBrain/selected.genes.rep.1.tsv
+#+++++
+
+#+++++
+#6. Retreve protein coding genes from https://www.gencodegenes.org evidence-based annotation of the mouse genome (GRCm38), version 4 (Ensembl 78)
+#subset for protein coding
+awk '$3=="gene"' gencode.vM4.annotation.gtf | grep -F "protein_coding" | cut -d ";" -f1 | cut -f9 | cut -d' ' -f 2 | sed 's/"//g' > protein_codingM4.txt
+#+++++
+
+#+++++
+#7. Subset coding protein genes from previous selected genes
+grep -F -f protein_codingM4.txt MBrain/selected.genes.rep.2.tsv > MBrain/selected.genes.rep.2.codingsubset.tsv
+grep -F -f protein_codingM4.txt MBrain/selected.genes.rep.1.tsv > MBrain/selected.genes.rep.1.codingsubset.tsv
+#+++++
+
+#+++++
+#8. Merge replicates
+paste <(cat Hrt/selected.genes.rep.1.codingsubset.tsv) <(cat Hrt/selected.genes.rep.2.codingsubset.tsv | cut -f2-) > Hrt/selected.genes.rep.1.2.merged.tsv
+paste <(cat MBrain/selected.genes.rep.1.codingsubset.tsv) <(cat MBrain/selected.genes.rep.2.codingsubset.tsv | cut -f2-) > MBrain/selected.genes.rep.1.2.merged.tsv
+#+++++
+
+#+++++
+#9. run QN on merged matrix
+Rscript united.R MBrain/selected.genes.rep.1.2.merged.tsv > MBrain/selected.genes.rep.1.2.log.after.QN.merged.tsv
+Rscript united.R Hrt/selected.genes.rep.1.2.merged.tsv > Hrt/selected.genes.rep.1.2.log.after.QN.merged.tsv
+#+++++
+
+#+++++
+#10. split joint matrix into rep. 1 and rep. 2 matrices
+awk 'BEGIN{FS=OFS="\t"}{if (NR==1){print "gene_id", $0} else {print $0}}' MBrain/selected.genes.rep.1.2.log.after.QN.merged.tsv | cut -f-9 | sed '1s/gene_id\t//' > MBrain/selected.genes.rep.1.after.QN.merged.tsv
+awk 'BEGIN{FS=OFS="\t"}{if (NR==1){print "gene_id", $0} else {print $0}}' MBrain/selected.genes.rep.1.2.log.after.QN.merged.tsv | cut -f1,10- | sed '1s/gene_id\t//' > MBrain/selected.genes.rep.2.after.QN.merged.tsv
+#+++++
+
+
+#+++++
+#11. take the average of replicate 1 and 2
+Rscript matrix_matrix_mean.R -a MBrain/selected.genes.rep.1.after.QN.merged.tsv -b MBrain/selected.genes.rep.2.after.QN.merged.tsv -o MBrain/selected.genes.rep.1.2.log.after.QN.merged2.tsv -r 2
+Rscript matrix_matrix_mean.R -a Hrt/selected.genes.rep.1.after.QN.merged.tsv -b Hrt/selected.genes.rep.2.after.QN.merged.tsv -o Hrt/selected.genes.rep.1.2.log.after.QN.merged2.tsv -r 2
+#+++++
+
+#+++++
+#12. run Ramil's classification (WARNING: run manually because needs to add tmp gene_id to header)
+selected.genes.rep.1.2.log.after.QN.merged2.tsv
+!!
+#+++++
+
+#+++++
+#13. run maSigPro for obtaining DEG
+Rscript maSigPro.wrapper.R --rep1 Hrt/selected.genes.rep.1.after.QN.merged.tsv --rep2 Hrt/selected.genes.rep.2.after.QN.merged.tsv -o expression.QN.merged.maSigPro.out.tsv
+Rscript maSigPro.wrapper.R --rep1 MBrain/selected.genes.rep.1.after.QN.merged.tsv --rep2 MBrain/selected.genes.rep.2.after.QN.merged.tsv -o expression.QN.merged.maSigPro.out.tsv
+#+++++
+
+#+++++
+#14. get ramil classifications from deg (masigpro)
+grep -Ff <(cut -f1 Hrt/expression.QN.merged.maSigPro.out.tsv) Hrt/selected.genes.rep.1.2.log.after.QN.merged2.tsv.classification | cut -f2 | sort | uniq -c
+#+++++
+
+#+++++
+#15. metadata qualitative expression classification
+grep -Ff <(tail -n+2 Hrt/expression.QN.merged.maSigPro.out.tsv | cut -f1) Hrt/selected.genes.rep.1.2.log.after.QN.merged2.tsv.classification > Hrt/metadata.tsv
+#+++++
+
+#+++++
+#
+#SUBSET FILES
+#generation info
+#
+#+++++
+grep upreg Hrt/metadata.tsv > Hrt/metadata.upreg.tsv
+grep downreg Hrt/metadata.tsv > Hrt/metadata.downreg.tsv
+grep bending Hrt/metadata.tsv > Hrt/metadata.bending.tsv
+grep peaking Hrt/metadata.tsv > Hrt/metadata.peaking.tsv
+#
+grep upreg MBrain/metadata.tsv > MBrain/metadata.upreg.tsv
+grep downreg MBrain/metadata.tsv > MBrain/metadata.downreg.tsv
+grep bending MBrain/metadata.tsv > MBrain/metadata.bending.tsv
+grep peaking MBrain/metadata.tsv > MBrain/metadata.peaking.tsv
+#+++++
+
+#+++++
+#Getting only name genes
+cut -f1 Hrt/metadata.peaking.tsv > Hrt/metadata.peaking.cut.tsv
+cut -f1 Hrt/metadata.bending.tsv > Hrt/metadata.bending.cut.tsv
+cut -f1 Hrt/metadata.downreg.tsv > Hrt/metadata.downreg.cut.tsv
+cut -f1 Hrt/metadata.upreg.tsv > Hrt/metadata.upreg.cut.tsv
+cut -f1 MBrain/metadata.upreg.tsv > MBrain/metadata.upreg.cut.tsv
+cut -f1 MBrain/metadata.bending.tsv > MBrain/metadata.bending.cut.tsv
+cut -f1 MBrain/metadata.downreg.tsv > MBrain/metadata.downreg.cut.tsv
+cut -f1 MBrain/metadata.peaking.tsv > MBrain/metadata.peaking.cut.tsv
+#+++++
+
+#+++++
+#Getting expression matrix for the subsetted
+grep -Ff Hrt/metadata.peaking.cut.tsv Hrt/selected.genes.rep.1.2.log.after.QN.merged2.tsv > Hrt/selected.genes.peaking.tsv
+grep -Ff Hrt/metadata.bending.cut.tsv Hrt/selected.genes.rep.1.2.log.after.QN.merged2.tsv > Hrt/selected.genes.bending.tsv
+grep -Ff Hrt/metadata.upreg.cut.tsv Hrt/selected.genes.rep.1.2.log.after.QN.merged2.tsv > Hrt/selected.genes.upreg.tsv
+grep -Ff Hrt/metadata.downreg.cut.tsv Hrt/selected.genes.rep.1.2.log.after.QN.merged2.tsv > Hrt/selected.genes.downreg.tsv
+#
+grep -Ff MBrain/metadata.peaking.cut.tsv MBrain/selected.genes.rep.1.2.log.after.QN.merged2.tsv > MBrain/selected.genes.peaking.tsv
+grep -Ff MBrain/metadata.bending.cut.tsv MBrain/selected.genes.rep.1.2.log.after.QN.merged2.tsv > MBrain/selected.genes.bending.tsv
+grep -Ff MBrain/metadata.upreg.cut.tsv MBrain/selected.genes.rep.1.2.log.after.QN.merged2.tsv > MBrain/selected.genes.upreg.tsv
+grep -Ff MBrain/metadata.downreg.cut.tsv MBrain/selected.genes.rep.1.2.log.after.QN.merged2.tsv > MBrain/selected.genes.downreg.tsv
+#+++++
+
+#+++++
+#List of deg genes
+cut -f1 Hrt/expression.QN.merged.maSigPro.out.tsv > Hrt/masig.genes.tsv
+cut -f1 MBrain/expression.QN.merged.maSigPro.out.tsv > MBrain/masig.genes.tsv
+#+++++
+
+#+++++
+# Expression matrix of deg genes
+grep -Ff MBrain/masig.genes.tsv MBrain/selected.genes.rep.1.2.log.after.QN.merged2.tsv > MBrain/expression.masig.tsv
+grep -Ff Hrt/masig.genes.tsv Hrt/selected.genes.rep.1.2.log.after.QN.merged2.tsv > Hrt/expression.masig.tsv
+#+++++
+
+#+++++
+# Deg classification
+perl classification_LOG2_3.pl Hrt/expression.masig.tsv
+perl classification_LOG2_3.pl MBrain/expression.masig.tsv
+#+++++
+
+===
+#+++++
+# Silent coding list
+grep -Ff protein_codingM4.txt Hrt/silent.genes.txt > Hrt/silent.coding.txt
+grep -Ff protein_codingM4.txt MBrain/silent.genes.txt > MBrain/silent.coding.txt
+#+++++
+
+#+++++
+# Combining all DEG in a list for using grep -v to get not classified ones
+cat Hrt/metadata.upreg.tsv > Hrt/metadata.4deg.tsv
+cat Hrt/metadata.downreg.tsv >> Hrt/metadata.4deg.tsv
+cat Hrt/metadata.peaking.tsv >> Hrt/metadata.4deg.tsv
+cat Hrt/metadata.bending.tsv >> Hrt/metadata.4deg.tsv
+#
+grep -v -Ff MBrain/metadata.4deg.cut.tsv MBrain/metadata.tsv > MBrain/metadata.not.classified.tsv
+#+++++
+
+#+++++
+# G etting gene name list for different DEG category, once checked which number correspond
+gawk '$2==1' MBrain/clusterinfo.tsv > MBrain/new.bending.tsv
+gawk '$2==2' MBrain/clusterinfo.tsv >> MBrain/new.bending.tsv
+gawk '$2==3' MBrain/clusterinfo.tsv > MBrain/new.downreg.tsv
+gawk '$2==4' MBrain/clusterinfo.tsv > MBrain/new.peaking.tsv
+gawk '$2==5' MBrain/clusterinfo.tsv >> MBrain/new.bending.tsv
+gawk '$2==6' MBrain/clusterinfo.tsv > MBrain/new.upreg.tsv
+gawk '$2==7' MBrain/clusterinfo.tsv >> MBrain/new.peaking.tsv
+#
+cut -f1 MBrain/new.upreg.tsv >> MBrain/metadata.upreg.cut.tsv
+cut -f1 MBrain/new.downreg.tsv >> MBrain/metadata.downreg.cut.tsv
+cut -f1 MBrain/new.bending.tsv >> MBrain/metadata.bending.cut.tsv
+cut -f1 MBrain/new.peaking.tsv >> MBrain/metadata.peaking.cut.tsv
+cut -f1 Hrt/new.peaking.tsv >> Hrt/metadata.peaking.cut.tsv
+cut -f1 Hrt/new.bending.tsv >> Hrt/metadata.bending.cut.tsv
+cut -f1 Hrt/new.downreg.tsv >> Hrt/metadata.downreg.cut.tsv
+cut -f1 Hrt/new.upreg.tsv >> Hrt/metadata.upreg.cut.tsv
+#+++++
+
+#+++++
+# Getting stagly gene list
+grep -v -Ff Hrt/masig.genes.tsv Hrt/selected.genes.rep.1.codingsubset.tsv | grep -v -Ff Hrt/silent.coding.txt > Hrt/stably.genes.tsv
+grep -v -Ff MBrain/masig.genes.tsv MBrain/selected.genes.rep.1.codingsubset.tsv | grep -v -Ff MBrain/silent.coding.txt > MBrain/stably.genes.tsv
+#+++++
+
+#+++++
+# Getting only base gene name (w.o. dot)
+cut -f1 -d'.' Hrt/metadata.upreg.cut.tsv > Hrt/metadata.upreg.go.tsv
+cut -f1 -d'.' MBrain/metadata.upreg.cut.tsv > MBrain/metadata.upregMacBMacBooMacBMMacMMaMcut -f1 -d'.' MBrain/metadata.downreg.cut.tsv > MBrain/metadata.downreg.go.tsv
+cut -f1 -d'.' Hrt/metadata.downreg.cut.tsv > Hrt/metadata.downreg.go.tsv
+cut -f1 -d'.' Hrt/metadata.bending.cut.tsv > Hrt/metadata.bending.go.tsv
+cut -f1 -d'.' MBrain/metadata.bending.cut.tsv > MBrain/metadata.bending.go.tsv
+cut -f1 -d'.' MBrain/metadata.peaking.cut.tsv > MBrain/metadata.peaking.go.tsv
+cut -f1 -d'.' Hrt/metadata.peaking.cut.tsv > Hrt/metadata.peaking.go.tsv
+#+++++
+
+#+++++
+# Expression files for DEG subsets
+grep -Ff Hrt/metadata.bending.cut.tsv Hrt/selected.genes.rep.1.2.log.after.QN.merged2.tsv > Hrt/expression.bending.tsv
+grep -Ff Hrt/metadata.peaking.cut.tsv Hrt/selected.genes.rep.1.2.log.after.QN.merged2.tsv > Hrt/expression.peaking.tsv
+grep -Ff Hrt/metadata.downreg.cut.tsv Hrt/selected.genes.rep.1.2.log.after.QN.merged2.tsv > Hrt/expression.downreg.tsv
+grep -Ff Hrt/metadata.upreg.cut.tsv Hrt/selected.genes.rep.1.2.log.after.QN.merged2.tsv > Hrt/expression.upreg.tsv
+#
+grep -Ff MBrain/metadata.upreg.cut.tsv MBrain/selected.genes.rep.1.2.log.after.QN.merged2.tsv > MBrain/expression.upreg.tsv
+grep -Ff MBrain/metadata.downreg.cut.tsv MBrain/selected.genes.rep.1.2.log.after.QN.merged2.tsv > MBrain/expression.downreg.tsv
+grep -Ff MBrain/metadata.peaking.cut.tsv MBrain/selected.genes.rep.1.2.log.after.QN.merged2.tsv > MBrain/expression.peaking.tsv
+grep -Ff MBrain/metadata.bending.cut.tsv MBrain/selected.genes.rep.1.2.log.after.QN.merged2.tsv > MBrain/expression.bending.tsv
+#+++++
+
+#+++++
+# Differencially expressed at TP 10.5
+gawk '{if($2 <= 1){print}}' Hrt/selected.genes.rep.1.2.log.after.QN.merged2.tsv > Hrt/selected.genes.expr.0.tsv
+gawk '{if($2 > 1 && $2 < 4.70044){print}}' Hrt/selected.genes.rep.1.2.log.after.QN.merged2.tsv > Hrt/selected.genes.expr.1.tsv
+gawk '{if($2 >= 4.70044){print}}' Hrt/selected.genes.rep.1.2.log.after.QN.merged2.tsv > Hrt/selected.genes.expr.25.tsv
+#
+gawk '{if($2 <= 1){print}}' MBrain/selected.genes.rep.1.2.log.after.QN.merged2.tsv > MBrain/selected.genes.expr.0.tsv
+gawk '{if($2 > 1 && $2 < 4.70044){print}}' MBrain/selected.genes.rep.1.2.log.after.QN.merged2.tsv > MBrain/selected.genes.expr.1.tsv
+gawk '{if($2 >= 4.70044){print}}' MBrain/selected.genes.rep.1.2.log.after.QN.merged2.tsv > MBrain/selected.genes.expr.25.tsv
+#+++++
+
+
+sed 's/$/\tupregulation/' Hrt/metadata.upreg.cut.tsv > Hrt/metadata.upreg.tsv
+sed 's/$/\tdownregulation/' Hrt/metadata.downreg.cut.tsv > Hrt/metadata.downreg.tsv
+sed 's/$/\tpeaking/' Hrt/metadata.peaking.cut.tsv > Hrt/metadata.peaking.tsv
+sed 's/$/\tbending/' Hrt/metadata.bending.cut.tsv > Hrt/metadata.bending.tsv
+
+#+++++
+# File containing all DEG
+cat MBrain/metadata.upreg.tsv > MBrain/metadata.all.4.tsv
+cat MBrain/metadata.downreg.tsv >> MBrain/metadata.all.4.tsv
+cat MBrain/metadata.peaking.tsv >> MBrain/metadata.all.4.tsv
+cat MBrain/metadata.bending.tsv >> MBrain/metadata.all.4.tsv
+#+++++
+
+#+++++
+# Subsetting differentially expressed at TP 10.5 for DEG.
+grep -Ff MBrain/metadata.upreg.cut.tsv MBrain/selected.genes.expr.0.tsv > MBrain/selected.genes.expr.0.upreg.tsv
+grep -Ff MBrain/metadata.upreg.cut.tsv MBrain/selected.genes.expr.1.tsv > MBrain/selected.genes.expr.1.upreg.tsv
+grep -Ff MBrain/metadata.upreg.cut.tsv MBrain/selected.genes.expr.25.tsv > MBrain/selected.genes.expr.25.upreg.tsv
+#
+grep -Ff Hrt/metadata.upreg.cut.tsv Hrt/selected.genes.expr.0.tsv > Hrt/selected.genes.expr.0.upreg.tsv
+grep -Ff Hrt/metadata.upreg.cut.tsv Hrt/selected.genes.expr.1.tsv > Hrt/selected.genes.expr.1.upreg.tsv
+grep -Ff Hrt/metadata.upreg.cut.tsv Hrt/selected.genes.expr.25.tsv > Hrt/selected.genes.expr.25.upreg.tsv
+#+++++
