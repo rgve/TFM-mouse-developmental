@@ -69,10 +69,7 @@ Rscript /no_backup/rg/bborsari/projects/ERC/human/2018-01-19.chip-nf/Borsari_et_
 #+++++
 # 10. split joint matrix into rep. 1 and rep. 2 matrices
 awk 'BEGIN{FS=OFS="\t"}{if (NR==1){print "gene_id", $0} else {print $0}}' $myMark/$myMark.R1.R2.matrix.after.QN.merged.tsv | cut -f-9 | sed '1s/gene_id\t//' > $myMark/$myMark.R1.matrix.after.QN.merged.tsv &&
-#10 day!!!!!!!awk 'BEGIN{FS=OFS="\t"}{if (NR==1){print "gene_id", $0} else {print $0}}' $myMark/$myMark.R1.R2.matrix.after.QN.merged.tsv | cut -f-8 | sed '1s/gene_id\t//' > $myMark/$myMark.R1.matrix.after.QN.merged.tsv &&
-#
 awk 'BEGIN{FS=OFS="\t"}{if (NR==1){print "gene_id", $0} else {print $0}}' $myMark/$myMark.R1.R2.matrix.after.QN.merged.tsv | cut -f1,10-17 | sed '1s/gene_id\t//' > $myMark/$myMark.R2.matrix.after.QN.merged.tsv &&
-#10 day!!!!!!!awk 'BEGIN{FS=OFS="\t"}{if (NR==1){print "gene_id", $0} else {print $0}}' $myMark/$myMark.R1.R2.matrix.after.QN.merged.tsv | cut -f1,9-15 | sed '1s/gene_id\t//' > $myMark/$myMark.R2.matrix.after.QN.merged.tsv &&
 #+++++
 
 #+++++
