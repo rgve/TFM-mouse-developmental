@@ -1,0 +1,1 @@
+/nfs/users2/rg/bborsari/software/R-3.6.3/bin/Rscript ../bin/HMM.wrapper.marks.R -s 5 -o marks
