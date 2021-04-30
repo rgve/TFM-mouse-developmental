@@ -1,1 +1,5 @@
+#run for marks which have day 10 t.p.
 /nfs/users2/rg/bborsari/software/R-3.6.3/bin/Rscript ../bin/HMM.wrapper.marks.R -s 5 -o marks
+
+#run for all marks deleting day 10 t.p. for those which have it
+/nfs/users2/rg/bborsari/software/R-3.6.3/bin/Rscript bin/HMM.wrapper.marks.wo10.R -s 5 -o marks/wo10
