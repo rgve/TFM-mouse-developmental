@@ -1,15 +1,21 @@
+#0
+cd /users/rg/ragarcia/hub/ &&
+#myTissue CHANGE TISSUE MANUALLY $$$ WONT WORK
+
 #1
 index=/no_backup_isis/rg/projects/ERC/mouse/chipseq/chipseq-pipeline.db &&
 
 #2
-pathPub=/users/rg/ragarcia/public/hubs/ChIP-Seq.files &&
+#mkdir /users/rg/ragarcia/public/hubs/mouse/heart/ChIP-Seq.files
+pathPub=/users/rg/ragarcia/public/hubs/mouse/heart/ChIP-Seq.files &&
 
 #3
-pathPubHTML='https://public-docs.crg.es/rguigo/Data/ragarcia/hubs/mouse/ChIP-Seq.files' &&
+pathPubHTML='https://public-docs.crg.es/rguigo/Data/ragarcia/hubs/mouse/heart/ChIP-Seq.files' &&
 
-#4 dm momen focus en histon marks + pileup (ignore cbpalpha etc)
-#grep bw $index | grep pileup | grep midbrain | grep -v cEBP | grep -v input | cut -f-2 | while read labExpId pathFile; do fileName=$(basename $pathFile); new_pathFile="$pathPubHTML""/""$fileName"; other_fields=$(echo $labExpId | awk '{split($1, a, "X"); split(a[1], b, "H"); print "H"b[2]"\tH"b[3]"\tpileupSignal\t"a[2]}'); echo -e "$labExpId\t$new_pathFile\t$other_fields"; done | sed '1ilabExpId\tpath\tmark\ttime_point\tview\treplicate' > ChIP-seq.histone.marks.metadata.bw.tsv
-grep bw $index | grep pileup | grep midbrain | grep -v cEBP | grep -v input | cut -f-2 | while read labExpId pathFile; do fileName=$(basename $pathFile); new_pathFile="$pathPubHTML""/""$fileName"; other_fields=$(echo $labExpId | awk '{split($1, a, "X"); split(a[1], b, "H"); split(a[1], c, "n"); split(c[2], d, "."); split(d[1], e, "H"); print "H"b[2]"\t"e[1]"\tpileupSignal\t"a[2]}'); echo -e "$labExpId\t$new_pathFile\t$other_fields"; done  | sed '1ilabExpId\tpath\tmark\ttime_point\tview\treplicate' > ChIP-seq.histone.marks.metadata.bw.tsv &&
+#4 histone marks + pileup
+grep bw $index | grep pileup | grep heart | grep -v cEBP | grep -v input | cut -f2 | while read file; do ln -s $file $pathPub; done &&
+#grep bw $index | grep pileup | grep heart | grep -v cEBP | grep -v input | cut -f-2 | while read labExpId pathFile; do fileName=$(basename $pathFile); new_pathFile="$pathPubHTML""/""$fileName"; other_fields=$(echo $labExpId | awk '{split($1, a, "X"); split(a[1], b, "H"); print "H"b[2]"\tH"b[3]"\tpileupSignal\t"a[2]}'); echo -e "$labExpId\t$new_pathFile\t$other_fields"; done | sed '1ilabExpId\tpath\tmark\ttime_point\tview\treplicate' > ChIP-seq.histone.marks.metadata.bw.tsv
+grep bw $index | grep pileup | grep heart | grep -v cEBP | grep -v input | cut -f-2 | while read labExpId pathFile; do fileName=$(basename $pathFile); new_pathFile="$pathPubHTML""/""$fileName"; other_fields=$(echo $labExpId | awk '{split($1, a, "X"); split(a[1], b, "H"); split(a[1], c, "t"); split(c[2], d, "."); split(d[1], e, "H"); print "H"b[2]"\t"e[1]"\tpileupSignal\t"a[2]}'); echo -e "$labExpId\t$new_pathFile\t$other_fields"; done  | sed '1ilabExpId\tpath\tmark\ttime_point\tview\treplicate' > heart/ChIP-seq.histone.marks.metadata.bw.tsv && #CHANGE MIDBRAIN: 'split(a[1], c, "n")' HEART: 'split(a[1], c, "t")'
 
-#5 python script
-../../bborsari/scripts/utils/printUrls.py -f ChIP-seq.histone.marks.metadata.bw.tsv -i path -H 'https://public-docs.crg.es/rguigo/Data/ragarcia/hubs/mouse/ChIP-Seq.files' -n labExpId,view --composite --parent_track_name ChIP-seq.histoneMarks.bw --parent_long_label "ChIP-Seq - histone marks - pile-up signal" --super_track_name ChIP-seq --groups mark,time_point,view,replicate -c mark -p <(cut -f1 palette.txt | head -9) --print_super_track --dimensions mark,time_point,replicate,view --type "bigWig" > trackDb.txt
+#6 python script
+../../bborsari/scripts/utils/printUrls.py -f heart/ChIP-seq.histone.marks.metadata.bw.tsv -i path -H 'https://public-docs.crg.es/rguigo/Data/ragarcia/hubs/mouse/heart/ChIP-Seq.files' -n labExpId,view --composite --parent_track_name ChIP-seq.histoneMarks.bw --parent_long_label "ChIP-Seq - histone marks - pile-up signal" --super_track_name ChIP-seq --groups mark,time_point,view,replicate -c mark -p <(cut -f1 palette.txt | head -9) --print_super_track --dimensions mark,time_point,replicate,view --type "bigWig" > heart/trackDb.txt
