@@ -37,8 +37,10 @@ library(depmixS4)
 
 
 # 1. the marks we're analyzing
-marks <- c("H3K4me1", "H3K27ac", "H3K4me3",
+marks <- c("H3K4me1", "H3K4me2", "H3K27ac", "H3K9ac", "H3K4me3",
            "H3K36me3", "H3K9me3", "H3K27me3")
+#marks <- c("H3K4me1", "H3K27ac", "H3K4me3",
+#           "H3K36me3", "H3K9me3", "H3K27me3")
 
 
 # 2. prepare input matrix for multivariate HMM
@@ -66,7 +68,7 @@ for ( i in 2:6 ) {
   tmp$variable <- NULL
   colnames(tmp)[ncol(tmp)] <- marks[i]
   
-  m <- merge(m, tmp, by = "gene_id")
+  m <- merge(m, tmp, by = "gene_id", all.x = T)# for running with marks w.o. timepoint 10
   
 }
 
@@ -77,12 +79,13 @@ m$gene_id <- NULL
 # 3. run HMM
 set.seed(123)
 
-mod1 <- depmix(list(H3K4me1~1, H3K27ac~1, 
-                    H3K4me3~1, H3K36me3~1, 
+mod1 <- depmix(list(H3K4me1~1, H3K4me2~1, H3K27ac~1, 
+                    H3K9ac~1, H3K4me3~1, H3K36me3~1, 
                     H3K9me3~1, H3K27me3~1), 
                data = m, nstates = opt$states,
-               family = list(gaussian(), gaussian(), gaussian(),
-                             gaussian(), gaussian(), gaussian()),
+               family = list(gaussian(), gaussian(), gaussian(), 
+                             gaussian(), gaussian(), gaussian(),
+                             gaussian(), gaussian()),
                ntimes = rep(8, 14744))
 
 #14804 14785 14779
