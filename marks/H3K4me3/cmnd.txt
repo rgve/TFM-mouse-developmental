@@ -58,7 +58,7 @@ rm $myMark.path.*  &&
 # 8. Merge rep.1 and rep.2
 paste <(tail -n+2 $myMark/$myMark.R1.matrix.tsv) <(tail -n+2 $myMark/$myMark.R2.matrix.tsv | cut -f2-) | sed '1igene_id\tC10.1\tC11.1\tC12.1\tC13.1\tC14.1\tC15.1\tC16.1\tcPN.1\tC10.2\tC11.2\tC12.2\tC13.2\tC14.2\tC15.2\tC16.2\tcPN.2' > $myMark/$myMark.R1.R2.matrix.tsv &&
 #
-#10 day!!!!!!!paste <(tail -n+2 $myMark/$myMark.R1.matrix.tsv) <(tail -n+2 $myMark/$myMark.R2.matrix.tsv | cut -f2-) | sed '1igene_id\tC11.1\tC12.1\tC13.1\tC14.1\tC15.1\tC16.1\tcPN.1\tC11.2\tC12.2\tC13.2\tC14.2\tC15.2\tC16.2\tcPN.2' > $myMark/$myMark.R1.R2.matrix.tsv &&
+'1igene_id\tC11.1\tC12.1\tC13.1\tC14.1\tC15.1\tC16.1\tcPN.1\tC11.2\tC12.2\tC13.2\tC14.2\tC15.2\tC16.2\tcPN.2' > $myMark/$myMark.R1.R2.matrix.tsv &&
 #+++++
 
 #+++++
