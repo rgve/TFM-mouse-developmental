@@ -32,8 +32,10 @@ python2 ./join.py -b <(cat Hrt/subs_Hrt1.tsv | awk 'BEGIN{FS=OFS="\t"}{for (i=2;
 
 #+++++
 #6. Retrieve expression, matrices for the selected genes (silent & expressed >= 5 TPMs)
-bash ./selectMatrixRows.sh <(cat MBrain/genes.with.min.5.TPM.txt MBrain/silent.genes.txt) MBrain/subs_MBrain2.tsv > MBrain/selected.genes.rep.2.tsv
-bash ./selectMatrixRows.sh <(cat MBrain/genes.with.min.5.TPM.txt MBrain/silent.genes.txt) MBrain/subs_MBrain1.tsv > MBrain/selected.genes.rep.1.tsv
+bash selectMatrixRows.sh <(cat MBrain/genes.with.min.5.TPM.txt MBrain/silent.genes.txt) MBrain/subs_MBrain2.tsv > MBrain/selected.genes.rep.2.tsv
+bash selectMatrixRows.sh <(cat MBrain/genes.with.min.5.TPM.txt MBrain/silent.genes.txt) MBrain/subs_MBrain1.tsv > MBrain/selected.genes.rep.1.tsv
+bash selectMatrixRows.sh <(cat Hrt/genes.with.min.5.TPM.txt Hrt/silent.genes.txt) Hrt/subs_Hrt2.tsv > Hrt/selected.genes.rep.2.tsv
+bash selectMatrixRows.sh <(cat Hrt/genes.with.min.5.TPM.txt Hrt/silent.genes.txt) Hrt/subs_Hrt1.tsv > Hrt/selected.genes.rep.1.tsv
 #+++++
 
 #+++++
@@ -44,55 +46,66 @@ awk '$3=="gene"' gencode.vM4.annotation.gtf | grep -F "protein_coding" | cut -d 
 
 #+++++
 #7. Subset coding protein genes from previous selected genes
-grep -F -f protein_codingM4.txt MBrain/selected.genes.rep.2.tsv > MBrain/selected.genes.rep.2.codingsubset.tsv
-grep -F -f protein_codingM4.txt MBrain/selected.genes.rep.1.tsv > MBrain/selected.genes.rep.1.codingsubset.tsv
+grep -F -f protein_codingM4.txt MBrain/selected.genes.rep.2.tsv > MBrain/selected.genes.rep.2.codingsubset.tsv &&
+grep -F -f protein_codingM4.txt MBrain/selected.genes.rep.1.tsv > MBrain/selected.genes.rep.1.codingsubset.tsv &&
+#
+grep -F -f protein_codingM4.txt Hrt/selected.genes.rep.2.tsv > Hrt/selected.genes.rep.2.codingsubset.tsv &&
+grep -F -f protein_codingM4.txt Hrt/selected.genes.rep.1.tsv > Hrt/selected.genes.rep.1.codingsubset.tsv &&
 #+++++
 
 #+++++
 #8. Merge replicates
-paste <(cat Hrt/selected.genes.rep.1.codingsubset.tsv) <(cat Hrt/selected.genes.rep.2.codingsubset.tsv | cut -f2-) > Hrt/selected.genes.rep.1.2.merged.tsv
-paste <(cat MBrain/selected.genes.rep.1.codingsubset.tsv) <(cat MBrain/selected.genes.rep.2.codingsubset.tsv | cut -f2-) > MBrain/selected.genes.rep.1.2.merged.tsv
+paste <(cat Hrt/selected.genes.rep.1.codingsubset.tsv) <(cat Hrt/selected.genes.rep.2.codingsubset.tsv | cut -f2-) > Hrt/selected.genes.rep.1.2.merged.tsv &&
+paste <(cat MBrain/selected.genes.rep.1.codingsubset.tsv) <(cat MBrain/selected.genes.rep.2.codingsubset.tsv | cut -f2-) > MBrain/selected.genes.rep.1.2.merged.tsv &&
 #+++++
 
 #+++++
 #9. run QN on merged matrix
-Rscript united.R MBrain/selected.genes.rep.1.2.merged.tsv > MBrain/selected.genes.rep.1.2.log.after.QN.merged.tsv
-Rscript united.R Hrt/selected.genes.rep.1.2.merged.tsv > Hrt/selected.genes.rep.1.2.log.after.QN.merged.tsv
+/nfs/users2/rg/bborsari/software/R-3.5.2/bin/Rscript united.R MBrain/selected.genes.rep.1.2.merged.tsv > MBrain/selected.genes.rep.1.2.log.after.QN.merged.tsv &&
+/nfs/users2/rg/bborsari/software/R-3.5.2/bin/Rscript united.R Hrt/selected.genes.rep.1.2.merged.tsv > Hrt/selected.genes.rep.1.2.log.after.QN.merged.tsv &&
+
 #+++++
 
 #+++++
 #10. split joint matrix into rep. 1 and rep. 2 matrices
-awk 'BEGIN{FS=OFS="\t"}{if (NR==1){print "gene_id", $0} else {print $0}}' MBrain/selected.genes.rep.1.2.log.after.QN.merged.tsv | cut -f-9 | sed '1s/gene_id\t//' > MBrain/selected.genes.rep.1.after.QN.merged.tsv
-awk 'BEGIN{FS=OFS="\t"}{if (NR==1){print "gene_id", $0} else {print $0}}' MBrain/selected.genes.rep.1.2.log.after.QN.merged.tsv | cut -f1,10- | sed '1s/gene_id\t//' > MBrain/selected.genes.rep.2.after.QN.merged.tsv
+awk 'BEGIN{FS=OFS="\t"}{if (NR==1){print "gene_id", $0} else {print $0}}' MBrain/selected.genes.rep.1.2.log.after.QN.merged.tsv | cut -f-9 | sed '1s/gene_id\t//' > MBrain/selected.genes.rep.1.after.QN.merged.tsv &&
+awk 'BEGIN{FS=OFS="\t"}{if (NR==1){print "gene_id", $0} else {print $0}}' MBrain/selected.genes.rep.1.2.log.after.QN.merged.tsv | cut -f1,10- | sed '1s/gene_id\t//' > MBrain/selected.genes.rep.2.after.QN.merged.tsv &&
+#
+awk 'BEGIN{FS=OFS="\t"}{if (NR==1){print "gene_id", $0} else {print $0}}' Hrt/selected.genes.rep.1.2.log.after.QN.merged.tsv | cut -f-9 | sed '1s/gene_id\t//' > Hrt/selected.genes.rep.1.after.QN.merged.tsv &&
+awk 'BEGIN{FS=OFS="\t"}{if (NR==1){print "gene_id", $0} else {print $0}}' Hrt/selected.genes.rep.1.2.log.after.QN.merged.tsv | cut -f1,10- | sed '1s/gene_id\t//' > Hrt/selected.genes.rep.2.after.QN.merged.tsv &&
 #+++++
 
 
 #+++++
 #11. take the average of replicate 1 and 2
-Rscript matrix_matrix_mean.R -a MBrain/selected.genes.rep.1.after.QN.merged.tsv -b MBrain/selected.genes.rep.2.after.QN.merged.tsv -o MBrain/selected.genes.rep.1.2.log.after.QN.merged2.tsv -r 2
-Rscript matrix_matrix_mean.R -a Hrt/selected.genes.rep.1.after.QN.merged.tsv -b Hrt/selected.genes.rep.2.after.QN.merged.tsv -o Hrt/selected.genes.rep.1.2.log.after.QN.merged2.tsv -r 2
+/nfs/users2/rg/bborsari/software/R-3.5.2/bin/Rscript matrix_matrix_mean.R -a MBrain/selected.genes.rep.1.after.QN.merged.tsv -b MBrain/selected.genes.rep.2.after.QN.merged.tsv -o MBrain/selected.genes.rep.1.2.log.after.QN.merged2.tsv -r 2 &&
+/nfs/users2/rg/bborsari/software/R-3.5.2/bin/Rscript matrix_matrix_mean.R -a Hrt/selected.genes.rep.1.after.QN.merged.tsv -b Hrt/selected.genes.rep.2.after.QN.merged.tsv -o Hrt/selected.genes.rep.1.2.log.after.QN.merged2.tsv -r 2 &&
 #+++++
 
 #+++++
 #12. run Ramil's classification (WARNING: run manually because needs to add tmp gene_id to header)
-selected.genes.rep.1.2.log.after.QN.merged2.tsv
-!!
+# cd tissue
+# perl ../classification_LOG2_3.pl selected.genes.rep.1.2.log.after.QN.merged2.tsv 
 #+++++
 
 #+++++
 #13. run maSigPro for obtaining DEG
-Rscript maSigPro.wrapper.R --rep1 Hrt/selected.genes.rep.1.after.QN.merged.tsv --rep2 Hrt/selected.genes.rep.2.after.QN.merged.tsv -o expression.QN.merged.maSigPro.out.tsv
-Rscript maSigPro.wrapper.R --rep1 MBrain/selected.genes.rep.1.after.QN.merged.tsv --rep2 MBrain/selected.genes.rep.2.after.QN.merged.tsv -o expression.QN.merged.maSigPro.out.tsv
+/nfs/users2/rg/bborsari/software/R-3.5.2/bin/Rscript maSigPro.wrapper.R --rep1 Hrt/selected.genes.rep.1.after.QN.merged.tsv --rep2 Hrt/selected.genes.rep.2.after.QN.merged.tsv -o Hrt/expression.QN.merged.maSigPro.out.tsv &&
+/nfs/users2/rg/bborsari/software/R-3.5.2/bin/Rscript maSigPro.wrapper.R --rep1 MBrain/selected.genes.rep.1.after.QN.merged.tsv --rep2 MBrain/selected.genes.rep.2.after.QN.merged.tsv -o MBrain/expression.QN.merged.maSigPro.out.tsv &&
 #+++++
 
 #+++++
 #14. get ramil classifications from deg (masigpro)
-grep -Ff <(cut -f1 Hrt/expression.QN.merged.maSigPro.out.tsv) Hrt/selected.genes.rep.1.2.log.after.QN.merged2.tsv.classification | cut -f2 | sort | uniq -c
+grep -Ff <(cut -f1 Hrt/expression.QN.merged.maSigPro.out.tsv) Hrt/selected.genes.rep.1.2.log.after.QN.merged2.tsv.classification | cut -f2 | sort | uniq -c &&
+#
+grep -Ff <(cut -f1 MBrain/expression.QN.merged.maSigPro.out.tsv) MBrain/selected.genes.rep.1.2.log.after.QN.merged2.tsv.classification | cut -f2 | sort | uniq -c &&
 #+++++
 
 #+++++
 #15. metadata qualitative expression classification
-grep -Ff <(tail -n+2 Hrt/expression.QN.merged.maSigPro.out.tsv | cut -f1) Hrt/selected.genes.rep.1.2.log.after.QN.merged2.tsv.classification > Hrt/metadata.tsv
+grep -Ff <(tail -n+2 Hrt/expression.QN.merged.maSigPro.out.tsv | cut -f1) Hrt/selected.genes.rep.1.2.log.after.QN.merged2.tsv.classification > Hrt/metadata.tsv &&
+#
+grep -Ff <(tail -n+2 MBrain/expression.QN.merged.maSigPro.out.tsv | cut -f1) MBrain/selected.genes.rep.1.2.log.after.QN.merged2.tsv.classification > MBrain/metadata.tsv &&
 #+++++
 
 #+++++
