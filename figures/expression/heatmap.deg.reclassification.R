@@ -32,7 +32,7 @@ clust.frame <- as.data.frame(znclassHrt.clust)
 clust.frame$cluster <- as.factor(clust.frame$cluster)
 pheatmap(znclassHrt, main = 'Hrt not classified genes', cluster_cols = FALSE, treeheight_row = 0,  cutree_rows = 6, clustering_method = 'ward.D2', show_colnames = T, show_rownames = F, annotation_row = clust.frame[,'cluster', drop = F])
 
-matches <- c('bending','downregulation','downregulation','peaking', 'upregulation', 'peaking')
+matches <- c('bending','downregulation','downregulation','peaking', 'upregulation', 'peaking') #naming following cluster names for assigning to the output matrix
 names(matches) <- c(1,2,3,4,5,6)
 
 clust.frame$class <- matches[clust.frame$cluster]
