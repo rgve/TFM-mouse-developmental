@@ -1,4 +1,5 @@
 #boxplot violinplot dotplot and correlations
+#for marks without first timepoint delete (2) time tags #17 and remove first expression matrix column
 library(ggplot2)
 
 expression <- read.table('/no_backup/rg/ragarcia/repeated/MBrain/expression/excluded/selected.genes.expr.25.upreg.tsv', sep="\t" , header=F)
@@ -9,6 +10,11 @@ expression$V1 <-  NULL
 rownames(expression) <- sub("[.].*", "", rownames(expression))
 
 chrom <- read.table('/no_backup/rg/ragarcia/repeated/MBrain/results/marks/H3K36me3/H3K36me3.matrix.after.QN.merged.tsv', sep="\t")
+
+#delete first expression timepoint for marks without tp 10.5
+  #expression$X10.5.1 <- NULL
+  #expression$V2 <- NULL
+
 
 #get only chrom rows present in expression subset
 colnames(expression) <- colnames(chrom)
