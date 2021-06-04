@@ -1,14 +1,5 @@
-#
 
-#not finished
-
-#
-
-
-
-
-# 1. re-scale matrices in scale 0-100%
-
+# re-scale matrices in scale 0-100%
 
 /nfs/users2/rg/bborsari/software/R-3.5.2/bin/Rscript /no_backup/rg/bborsari/projects/ERC/human/2018-01-19.chip-nf/Borsari_et_al/bin/rescale.R -i expression/excluded/selected.genes.rep.1.2.log.after.QN.merged2.tsv -o expression/excluded/expression.matrix.rescaled.tsv
 
@@ -25,7 +16,7 @@ done
 #all genes      = expression/excluded/selected.genes.rep.1.2.log.after.QN.merged.tsv
 #upreg >25      = expression/excluded/selected.genes.expr.25.upreg.tsv
 #upreg >1       = expression/excluded/selected.genes.expr.1.upreg.tsv 
-#upreg          = 
+#upreg          = expression/excluded/selected.genes.expr.1.tsv 
 #=====
 
 for x in H3K27ac H3K27me3 H3K36me3 H3K4me1 H3K4me2  H3K9ac H3K9me3; do mkdir "$x"/dynamics; done
@@ -39,15 +30,17 @@ for x in H3K27ac H3K27me3 H3K36me3 H3K4me1 H3K4me2  H3K9ac H3K9me3; do mkdir "$x
 #upreg >1       = 
 #upreg          = results/marks/"$x"/Zerone/peaks.tp.all.txt
 #=====
-results/marks/"$x"/Zerone/allgenes.not.exp.peaks.tp10.txt
 
-
+#  get genes with a peak on 1st timepoint
 for x in H3K27ac H3K27me3  H3K4me1   H3K4me3  H3K9me3; do grep -Ff <( cut -f7 results/marks/"$x"/Zerone/midbrainDay10.5"$x"_zerone_merged.bed.intersectBed.bed | uniq )    | cut -f1 >> results/marks/"$x"/Zerone/allgenes.not.exp.peaks.tp10.txt
 for x in H3K4me2 H3K9ac; do grep -Ff <( cut -f7 results/marks/"$x"/Zerone/midbrainDay11.5"$x"_zerone_merged.bed.intersectBed.bed | uniq ) expression/excluded/selected.genes.expr.25.tsv | cut -f1 >> results/marks/"$x"/Zerone/allgenes.not.exp.peaks.tp10.txt
 
+#copy file of peaks in 1st timepoint for adding genes with another peaks
 for x in H3K27ac H3K27me3  H3K4me1 H3K4me2  H3K4me3 H3K9ac H3K9me3; do cp results/marks/"$x"/Zerone/allgenes.not.exp.peaks.tp10.txt results/marks/"$x"/Zerone/allgenes.not.exp.peaks.tp.all.txt
 for x in H3K27ac H3K27me3  H3K4me1 H3K4me2  H3K4me3 H3K9ac H3K9me3; do for y in 11.5 12.5 13.5 14.5 15.5 16.5 0; do grep -Ff <( cut -f7 results/marks/"$x"/Zerone/midbrainDay"$y""$x"_zerone_merged.bed.intersectBed.bed | uniq ) expression/excluded/selected.genes.expr.25.tsv  | cut -f1 >> results/marks/"$x"/Zerone/allgenes.not.exp.peaks.tp.all.txt
 
-for x in H3K27ac H3K27me3  H3K4me3 H3K4me1 H3K4me2  H3K9ac H3K9me3; do sort -u results/marks/"$x"/Zerone/allgenes.not.exp.peaks.tp.all.txt | wc -l
+#get number of peaks in each category, or save the list
+for x in H3K27ac H3K27me3  H3K4me3 H3K4me1 H3K4me2  H3K9ac H3K9me3; do sort -u results/marks/"$x"/Zerone/allgenes.not.exp.peaks.tp.all.txt > /no_backup/rg/ragarcia/repeated/MBrain/results/marks/dynamics.common.K4me3K27me3/allgenes/allgenes.not.exp.peaks.tp.all.txt
+
 for x in H3K27ac H3K27me3  H3K4me3 H3K4me1 H3K4me2  H3K9ac H3K9me3; do sort -u results/marks/"$x"/Zerone/allgenes.not.exp.peaks.tp10.txt | wc -l
 
