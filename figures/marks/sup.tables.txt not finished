@@ -1,0 +1,57 @@
+
+#NOT FINISHED
+
+#-> all marked genes
+for x in H3K4me1 H3K4me2 H3K9ac H3K27ac H3K4me3 H3K36me3 H3K9me3 H3K27me3; do sort <( cut -f2 results/marks/"$x"/Zerone/"$x".all.genes.days.tsv) | uniq | wc -l
+
+#-> Dif. marked. per mark
+for x in H3K4me1 H3K4me2 H3K9ac H3K27ac H3K4me3 H3K36me3 H3K9me3 H3K27me3; do wc -l results/marks/"$x"/"$x".QN.merged.maSigPro.intersected.tsv; done &&
+for x in H3K4me2 H3K9ac; do wc -l results10/marks/"$x"/"$x".QN.merged.maSigPro.intersected.tsv; done
+
+#===
+# Sup. Table 1
+#===
+
+#-> silent unmarked
+
+
+#-> silent marked
+
+#-> expressed unmarked
+
+#-> expressed marked
+
+
+
+
+#===
+# Sup. Table 3
+#===
+##DEG##
+#-> Dif. marked per mark for DEG
+
+#-> Stb. marked per mark for  DEG
+
+#-> not marked for  DEG
+
+
+#===
+# Sup. Table 4
+#===
+
+##SILENT COD.##
+#-> Dif. marked per mark for silent cod.
+
+
+#-> Stb. marked per mark for silent cod. 
+
+#-> not marked for silent cod.
+
+##STAB. EXPR.##
+#-> Dif. marked per mark for stab. expr.
+
+
+#-> Stb. marked per mark for stab. expr.
+
+
+#-> not marked for stab. expr.
