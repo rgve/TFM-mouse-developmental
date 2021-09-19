@@ -1,5 +1,7 @@
 #!/usr/bin/Rscript
 
+#script by Raül García Veiga
+
 file_in <- commandArgs(trailingOnly = TRUE)
 
 data_matrix <- read.table(file=file_in,sep='\t', check.names=FALSE, header=F)
