@@ -1,3 +1,5 @@
+#script by Raül García Veiga
+
 #heatmap not classified
 setwd("/no_backup/rg/ragarcia/repeated")
 
