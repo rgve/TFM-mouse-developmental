@@ -1,3 +1,5 @@
+#script by Raül García Veiga
+
 library(ggplot2)
 #for -10 tp just delete tp 10 tags
 
