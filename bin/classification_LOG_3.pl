@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-# Author: Ramil Nurtdinov
+# Author: Ramil Nurtdinov, adapted by Raül García Veiga
 
 use strict;
 
