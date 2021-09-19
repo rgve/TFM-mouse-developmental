@@ -1,3 +1,5 @@
+#original script by Beatrice Borsari adapted by Raul Garcia Veiga
+
 .libPaths("/nfs/users2/rg/bborsari/software/R-3.6.3/library")
 
 #*****************
